@@ -1,293 +1,252 @@
 <!DOCTYPE html>
-<!--[if IE 8]> 				 <html class="no-js lt-ie9" lang="en"> <![endif]-->
-<!--[if gt IE 8]><!-->
-<html class="no-js" lang="en"> <!--<![endif]-->
-
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width" />
-  <title>Random Name Picker</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random User Selector</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f4f4f4;
+            margin: 0;
+        }
 
-  <link rel="stylesheet" href="css/normalize.css" />
-  <link rel="stylesheet" href="css/foundation.css" />
-  <script src="js/vendor/custom.modernizr.js"></script>
-  <script src="js/jquery-latest.min.js"></script>
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
 
-  <style>
-    #values {
-      position: relative;
-      font-size: 400%;
-      text-align: center;
-      margin: 0 auto;
-      z-index: 0;
-    }
+        ul {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 20px;
+        }
 
-    .name {
-      overflow: hidden;
-      display: block;
-    }
+        li {
+            display: flex;
+            align-items: center;
+            padding: 8px 15px;
+            margin-bottom: 5px;
+            background-color: #e9e9e9;
+            border-radius: 4px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
 
-    #names {
-      display: none;
-      padding: 5px;
-    }
+        li:hover {
+            background-color: #d4d4d4;
+        }
 
-    #namesbox {
-      min-height: 400px;
-      font-size: 32px;
-      color: #333;
-      resize: none;
-      border: 1px solid #F39C12;
-    }
+        li input[type="checkbox"] {
+            margin-right: 10px;
+        }
 
-    .extra {
-      font-size: 16px;
-      margin-top: 20px;
-    }
+        .button-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
 
-    #result1 {
-      background: #000;
-      color: #fbe34b;
-      padding: 20px;
-      z-index: 10;
-      margin-top: -150px;
-    }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
 
-    body {
-      background: #F1C40F url(img/bg-noise-orange.png);
-    }
+        button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
 
-    #varnote {
-      font-size: 40px;
-      text-align: center;
-      padding: 30px;
-    }
+        button:disabled {
+            background-color: #cccccc;
+            color: #666666;
+            cursor: not-allowed;
+            transform: none;
+        }
 
-    .copyright {
-      font-size: 11px;
-      font-family: Tahoma;
-      color: #9B59B6;
-    }
-  </style>
+        button:disabled:hover {
+            background-color: #cccccc;
+        }
 
+
+        #selected-user-container {
+            margin-top: 20px;
+            padding: 15px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            min-height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            overflow: hidden; /* To hide text overflow during animation if names are too long */
+        }
+
+        #selected-user {
+            animation: none; /* Initially no pulse animation */
+            display: inline-block; /* Needed for animation to work correctly with text content changes */
+            font-size: 2em; /* Increased font size here */
+        }
+
+        .looping-text {
+            animation: scrollText 0.3s steps(1) infinite; /* Fast step animation for looping */
+            white-space: nowrap; /* Prevent text wrapping */
+        }
+
+        @keyframes scrollText {
+            0% { transform: translateX(0%); } /* Start position */
+            100% { transform: translateX(-100%); } /* Move completely out of view (adjust if needed based on container width and text length) */
+        }
+
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .removed-item {
+            animation: fadeOut 0.5s ease forwards;
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(20px); }
+        }
+
+    </style>
 </head>
+<body>
 
-<body onload="reset();">
+    <div class="container">
+        <h2>User List</h2>
+        <ul id="user-list"></ul>
 
-  <div class="full-head"
-    style="width:100%;background:#111 url(img/header-bg.png) repeat-x center top;border-bottom:1px solid #D35400;">
-    <div class="row">
-      <div class="large-12 columns"
-        style="padding-top:50px;background:#111 url(img/header-bg.png) repeat-x center top;z-index:20;">
-        <ul class="button-group even-4">
-          <li><a href="index.html" class="alert button" id="reset">Reset</a></li>
-          <li><button class="button" id="list" onclick="namelist();">Name List</button></li>
-          <li><button class="button" id="save" onclick="save();">Save &amp; Update</button></li>
-          <li><button class="success button" id="go" onclick="go();">GO!</button></li>
-        </ul>
-      </div>
+        <div class="button-container">
+            <button id="select-button">Select Random User</button>
+            <button id="remove-button" disabled>Remove User</button>
+        </div>
+
+        <div id="selected-user-container">
+            <span id="selected-user"></span>
+        </div>
     </div>
-  </div>
 
-  <div class="row">
-    <div class="large-12 columns">
-      <h3 style="text-align:center;margin-top:30px;" id="headline">Let's see who is The (Un)Lucky One?</h3>
+    <script>
+        const userListElement = document.getElementById('user-list');
+        const selectButton = document.getElementById('select-button');
+        const removeButton = document.getElementById('remove-button');
+        const selectedUserElement = document.getElementById('selected-user');
 
-      <div id="varnote"><img src="img/logo.png">
-        <div class="copyright">&copy; Coded by <strong>Heiswayi Nrird (Modified by Nathan Stevens)</strong>, 2024</div>
-      </div>
+        let users = ["Shahd", "Kasim", "Salma", "Natacha", "Edouardo", "Belinda", "Faris", "Ayman", "Grecia", "Zoria", "Nozanin", "Mariana", "Bee", "Angelina", "Laura", "Sarah", "Aaron", "Susanna", "Cindi", "Dylan", "Viji", "Khansa", "Mostakim", "Kyler"];
+        let selectedUserName = null;
+        let userSelectableStatus = {}; // To store selectable status separately
+        let loopIntervalId = null; // To store interval ID for clearing
+        const loopDuration = 2000; // Duration of the looping effect in milliseconds
 
-      <div id="popdown">
-        <div id="names" class="inbox"><textarea name="namesbox" id="namesbox"></textarea></div>
-      </div>
+        // Initialize userSelectableStatus - all users selectable by default
+        users.forEach(user => {
+            userSelectableStatus[user] = true;
+        });
 
-      <div id="values"></div>
+        function displayUsers() {
+            userListElement.innerHTML = ''; // Clear existing list
+            users.forEach((userName, index) => {
+                const li = document.createElement('li');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `user-checkbox-${index}`;
+                checkbox.checked = !userSelectableStatus[userName]; // Initially unchecked = selectable
 
+                checkbox.addEventListener('change', () => {
+                    userSelectableStatus[userName] = !checkbox.checked; // Update selectable status
+                });
 
-    </div>
-  </div>
+                const label = document.createElement('label');
+                label.textContent = userName;
+                label.setAttribute('for', `user-checkbox-${index}`);
 
-  <script>
-    document.write('<script src=' +
-      ('__proto__' in {} ? 'js/vendor/zepto' : 'js/vendor/jquery') +
-      '.js><\/script>')
-  </script>
-
-  <script src="js/foundation.min.js"></script>
-  <script>$(document).foundation();</script>
-
-  <script>
-    var text;
-
-    // Use https://arraytext.com/ to convert list of names to JSArray
-    var defaultNames = ["Shahd", "Kasim", "Salma", "Natacha", "Edouardo", "Belinda", "Faris", "Ayman", "Grecia", "Zoria", "Nozanin", "Mariana", "Bee", "Angelina", "Laura", "Sarah", "Aaron", "Susanna", "Cindi", "Dylan", "Viji", "Khansa", "Mostakim", "Kyler"];
-
-    // copy the default names
-    var names = [...defaultNames];
-
-    function reset() {
-      // re-enable go button
-      setTimeout("$('#go').removeAttr('disabled')", 11005);
-      var namesbreak = "";
-      if (gup('names') != "") {
-        var names = gup('names');
-        namesbreak = names.replace(/101/g, '\n');
-        namesbreak = namesbreak.replace(/%20/g, ' ');
-      }
-      else {
-        var names = [...defaultNames];
-
-        for (var i in names) {
-          name = names[i];
-          if (name == "" || typeof (name) == undefined) { } else {
-            namesbreak = namesbreak + name + "\n";
-          }
+                li.appendChild(checkbox);
+                li.appendChild(label);
+                userListElement.appendChild(li);
+            });
         }
-      }
-      $("#namesbox").val(namesbreak);
-    }
 
-    function gup(para) {
-      para = para.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
-      var regexS = "[\\?&]" + para + "=([^&#]*)";
-      var regex = new RegExp(regexS);
-      var results = regex.exec(window.location.href);
-      if (results == null)
-        return "";
-      else
-        return results[1];
-    }
+        function selectRandomUser() {
+            const selectableUsers = users.filter(userName => userSelectableStatus[userName]);
 
-    function randOrd() {
-      return (Math.round(Math.random()) - 0.5);
-    }
+            if (selectableUsers.length === 0) {
+                selectedUserElement.textContent = "No selectable users available.";
+                removeButton.disabled = true;
+                selectedUserName = null;
+                return;
+            }
 
-    function save() {
-      $("#varnote").hide();
-      $("#popdown").show();
-      $("#values").hide();
-      $("div").remove("#result1");
-      savenames = $("#namesbox").val();
-      savenames = savenames.replace(/\n\r?/g, '101');
-      $('#headline').fadeOut();
-      $('#headline').text('The name list is saved and updated.').fadeIn();
-      $("#names").show();
-      $('#namesbox').attr('disabled', 'disabled');
-    }
+            let loopCounter = 0;
+            selectedUserElement.classList.add('looping-text'); // Apply looping animation class
+            selectedUserElement.textContent = ''; // Clear initial text
 
-    function namelist() {
-      $("#varnote").hide();
-      $('#namesbox').removeAttr('disabled', 'disabled');
-      $('#headline').text('Configure name list');
-      $("#popdown").show();
-      $("#values").hide();
-      $("#names").show();
-      $('body').css({ "overflow-y": "visible" });
-    }
+            loopIntervalId = setInterval(() => {
+                const index = loopCounter % selectableUsers.length;
+                selectedUserElement.textContent = selectableUsers[index];
+                loopCounter++;
+            }, 100); // Loop every 100ms - adjust for speed
 
-    // does the actual animation
-    function go() {
-      $("#varnote").hide();
-      $('body').css({ "overflow-y": "hidden" });
-      $('#go').attr('disabled', 'disabled');
-      $('#list').attr('disabled', 'disabled');
-      $('#save').attr('disabled', 'disabled');
-      $('#headline').slideUp();
-      $('#namesbox').slideDown();
+            setTimeout(() => {
+                clearInterval(loopIntervalId); // Stop looping after loopDuration
+                selectedUserElement.classList.remove('looping-text'); // Remove looping animation class
+                selectedUserElement.classList.add('pulse'); // Add pulse animation for final selection
 
-      var count = 1;
-      count = 1;
-      $("div").remove("#result1");
-      names = $("#namesbox").val();
-      if (document.all) { // IE
-        names = names.split("\n");
-      }
-      else { //Mozilla
-        names = names.split("\n");
-      }
-      $("#values").show();
-      $(".name").show();
-      $("#popdown").hide();
-      $("div").remove(".name");
-      $("div").remove(".extra");
-      $("#playback").html("");
-      newtop = names.length * 200 * -1;
-      //$('#values').css({top: -300});
-      $('#values').css({ top: + newtop });
-      names.sort(randOrd);
-      var fruits = new Array("apple", "pear", "orange", "banana");
-      //console.log(fruits);
-      //console.log(names);
-      //alert(newtop);
-      for (var i in names) {
-        if (names[i] == "" || typeof (names[i]) == undefined) {
-          count = count - 1;
-        } else {
-          name = names[i];
-          //console.log(name);
-          $('#values').append('<div id=result' + count + ' class=name>' + name + '</div>');
+                const randomIndex = Math.floor(Math.random() * selectableUsers.length);
+                selectedUserName = selectableUsers[randomIndex];
+                selectedUserElement.textContent = selectedUserName;
+                removeButton.disabled = false;
+                selectedUserElement.addEventListener('animationend', () => {
+                    selectedUserElement.classList.remove('pulse'); // Remove pulse class after animation
+                }, { once: true });
+
+
+            }, loopDuration); // Run for loopDuration milliseconds
         }
-        count = count + 1;
-      }
-      for (var i in names) {
-        if (names[i] == "" || typeof (names[i]) == undefined) { } else {
-          name = names[i];
-          $('#values').append('<div class=name>' + name + '</div>');
+
+        function removeSelectedUser() {
+            if (selectedUserName) {
+                const indexToRemove = users.indexOf(selectedUserName);
+                if (indexToRemove > -1) {
+                    const listItemToRemove = userListElement.children[indexToRemove];
+                    listItemToRemove.classList.add('removed-item'); // Add animation class
+
+                    listItemToRemove.addEventListener('animationend', () => {
+                        users.splice(indexToRemove, 1); // Remove from array after animation
+                        displayUsers(); // Re-render the list
+                        selectedUserElement.textContent = '';
+                        selectedUserName = null;
+                        removeButton.disabled = true;
+                        if (users.length === 0) {
+                            selectedUserElement.textContent = "No users left.";
+                        }
+                    }, { once: true }); // Ensure event listener runs only once
+                }
+            }
         }
-        count = count + 1;
-      }
-      for (var i in names) {
-        if (names[i] == "" || typeof (names[i]) == undefined) { } else {
-          name = names[i];
-          $('#values').append('<div class=name>' + name + '</div>');
-        }
-        count = count + 1;
-      }
-      text = $('#result1').text()
-      $('#values').animate({ top: '+176' }, 5000);
 
-      // make it stand out
-      setTimeout("standout(text)", 5000);
-      //setTimeout("$('#playback').hide('slow')",11005);
-    }
+        selectButton.addEventListener('click', selectRandomUser);
+        removeButton.addEventListener('click', removeSelectedUser);
 
-    function standout(text) {
-
-      $('#result1').removeClass('name');
-      $('.name').animate({ opacity: .25 });
-      $('#result1').animate({ height: '+=60px' });
-      $('#result1').append('<div class="extra"><a class="small alert button" href="#" onClick="removevictim();">Remove name from list</a></div>');
-      $('#go').removeAttr('disabled', 'disabled');
-      $('#list').removeAttr('disabled', 'disabled');
-      $('#save').removeAttr('disabled', 'disabled');
-      $('#headline').text('Found our Volunteer!');
-      $('#headline').slideDown();
-    }
-
-    function removevictim() {
-      // Removing victim from array and UI
-      // names = names.filter(function(){ return true});
-      // Rewriting namesbox contents
-      var nameupdated = "";
-      for (var i in names) {
-        name = names[i];
-        if (name == "" || name == text || typeof (name) == undefined) { } else {
-          nameupdated = nameupdated + "\n" + name;
-        }
-      }
-      $('#namesbox').val("");
-      $('#namesbox').val(nameupdated);
-      $('#result1').html("Removed");
-      $('#result1').fadeOut(1000, function () {
-        $("div").remove("#result1");
-      });
-      $("div").remove(".name");
-      $("div").remove(".extra");
-      $('#headline').text('OK, done! Let\'s see who is next? Just click "GO!" button for next roll.');
-    }
-
-  </script>
+        displayUsers(); // Initial display of users
+    </script>
 
 </body>
-
 </html>
