@@ -97,7 +97,7 @@
         #selected-user {
             animation: none; /* Initially no pulse animation */
             display: inline-block; /* Needed for animation to work correctly with text content changes */
-            font-size: 2em; /* Increased font size here */
+            font-size: 2.5em; /* Increased font size here */
         }
 
         .looping-text {
@@ -131,7 +131,7 @@
 <body>
 
     <div class="container">
-        <h2>User List</h2>
+        <h2>Volunter List</h2>
         <ul id="user-list"></ul>
 
         <div class="button-container">
@@ -154,7 +154,7 @@
         let selectedUserName = null;
         let userSelectableStatus = {}; // To store selectable status separately
         let loopIntervalId = null; // To store interval ID for clearing
-        const loopDuration = 2000; // Duration of the looping effect in milliseconds
+        const loopDuration = 1500; // Duration of the looping effect in milliseconds
 
         // Initialize userSelectableStatus - all users selectable by default
         users.forEach(user => {
