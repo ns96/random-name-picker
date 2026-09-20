@@ -250,6 +250,7 @@
         <div class="button-container">
             <button id="select-button">Select Random User</button>
             <button id="remove-button" disabled>Remove User</button>
+            <button id="skip-button" disabled>Skip</button>
         </div>
 
         <div id="selected-user-container">
@@ -272,6 +273,7 @@
         const userListElement = document.getElementById('user-list');
         const selectButton = document.getElementById('select-button');
         const removeButton = document.getElementById('remove-button');
+        const skipButton = document.getElementById('skip-button');
         const selectedUserElement = document.getElementById('selected-user');
 
         let users = [];
@@ -292,14 +294,24 @@
             storageStatus.textContent = `Saved ${users.length} names to browser storage for "${COURSE_KEY}"`;
         }
 
-        function loadFromStorage() {
+        function loadFromStorage(preserveSelections = false) {
             const key = getStorageKey();
             const rawData = localStorage.getItem(key);
             if (rawData) {
                 try {
                     users = JSON.parse(rawData);
-                    userSelectableStatus = {};
-                    users.forEach(u => userSelectableStatus[u] = true);
+
+                    if (preserveSelections) {
+                        const updatedStatus = {};
+                        users.forEach(u => {
+                            updatedStatus[u] = (u in userSelectableStatus) ? userSelectableStatus[u] : true;
+                        });
+                        userSelectableStatus = updatedStatus;
+                    } else {
+                        userSelectableStatus = {};
+                        users.forEach(u => userSelectableStatus[u] = true);
+                    }
+
                     displayUsers();
                     storageStatus.textContent = `Loaded ${users.length} names from storage`;
                     return true;
@@ -308,6 +320,7 @@
                 }
             }
             users = [];
+            userSelectableStatus = {};
             displayUsers();
             storageStatus.textContent = `No saved roster found. Please import your classlist CSV.`;
             return false;
@@ -395,9 +408,10 @@
         });
 
         restoreSessionBtn.addEventListener('click', () => {
-            loadFromStorage();
+            loadFromStorage(true);
             selectedUserElement.textContent = '';
             removeButton.disabled = true;
+            skipButton.disabled = true;
             storageStatus.textContent = `Restored initial session roster (${users.length} students).`;
         });
 
@@ -409,6 +423,7 @@
             displayUsers();
             selectedUserElement.textContent = '';
             removeButton.disabled = true;
+            skipButton.disabled = true;
             storageStatus.textContent = `Cleared saved data for "${COURSE_KEY}"`;
         });
 
@@ -447,9 +462,14 @@
             if (selectableUsers.length === 0) {
                 selectedUserElement.textContent = "No names available.";
                 removeButton.disabled = true;
+                skipButton.disabled = true;
                 selectedUserName = null;
                 return;
             }
+
+            selectButton.disabled = true;
+            removeButton.disabled = true;
+            skipButton.disabled = true;
 
             let loopCounter = 0;
             selectedUserElement.classList.add('looping-text');
@@ -469,7 +489,11 @@
                 const randomIndex = Math.floor(Math.random() * selectableUsers.length);
                 selectedUserName = selectableUsers[randomIndex];
                 selectedUserElement.textContent = selectedUserName;
+
+                selectButton.disabled = false;
                 removeButton.disabled = false;
+                skipButton.disabled = false;
+
                 selectedUserElement.addEventListener('animationend', () => {
                     selectedUserElement.classList.remove('pulse');
                 }, { once: true });
@@ -489,6 +513,7 @@
                         selectedUserElement.textContent = '';
                         selectedUserName = null;
                         removeButton.disabled = true;
+                        skipButton.disabled = true;
                         if (users.length === 0) {
                             selectedUserElement.textContent = "No users left.";
                         }
@@ -497,8 +522,25 @@
             }
         }
 
+        function skipSelectedUser() {
+            if (!selectedUserName) return;
+
+            // Mark the student as absent / unselectable
+            userSelectableStatus[selectedUserName] = false;
+
+            // Update checkbox UI
+            displayUsers();
+
+            // Clear current selection and automatically roll for the next student
+            selectedUserName = null;
+            removeButton.disabled = true;
+            skipButton.disabled = true;
+            selectRandomUser();
+        }
+
         selectButton.addEventListener('click', selectRandomUser);
         removeButton.addEventListener('click', removeSelectedUser);
+        skipButton.addEventListener('click', skipSelectedUser);
 
         loadFromStorage();
     </script>
